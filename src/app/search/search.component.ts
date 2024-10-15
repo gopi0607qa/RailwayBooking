@@ -1,6 +1,6 @@
 import { Component, inject, OnInit } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
-import { IStation, ITrain, PassengerData, Search } from '../Model/train';
+import { Customer, IAPIResponse, IStation, ITrain, PassengerData, Search } from '../Model/train';
 import { TrainService } from '../../Services/train.service';
 import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -22,13 +22,26 @@ export class SearchComponent implements OnInit {
   selectedTrain?: ITrain;
   passenger: PassengerData = new PassengerData();
   passengerList: any[] = [];
+  loggedUser : Customer = new Customer();
 
   ngOnInit(): void {
     this.loadAllStation();
   }
   constructor() {
+
+
+      try{
+      const localData = localStorage.getItem("trainAPP");
+      if(localData != null){
+        this.loggedUser = JSON.parse(localData);
+        }
+      } catch(e){
+        console.log("Local Storage Not Defined error occured");
+      }
+  
+
+
     this.activatedRoutee.params.subscribe((res: any) => {
-      debugger;
       this.searchData.dateOfBooking = res.dateOfBooking;
       this.searchData.fromStationId = res.fromStationId;
       this.searchData.toStationId = res.toStationId;
@@ -47,7 +60,6 @@ export class SearchComponent implements OnInit {
 
   getSearchTrains() {
     this.trainService.getTrainsSearch(this.searchData.fromStationId, this.searchData.toStationId, this.searchData.dateOfBooking).subscribe((res: any) => {
-      debugger;
       this.trainList = res.data;
     }
     );
@@ -72,8 +84,39 @@ export class SearchComponent implements OnInit {
     const strObj = JSON.stringify(this.passenger);
     const parseObj = JSON.parse(strObj);
     this.passengerList.push(parseObj);
+    this.passenger.passengerName='';
+    this.passenger.age=0;
 
   }
+
+  bookTicket(){
+    const BookingObj ={
+      
+        "bookingId": 0,
+        "trainId": this.selectedTrain?.trainId,
+        "passengerId": this.loggedUser.passengerID,
+        "travelDate": this.selectedTrain?.departureDate,
+        "bookingDate": new Date(),
+        "totalSeats": 0,
+        "TrainAppBookingPassengers": [] as any
+      
+    }
+    BookingObj.TrainAppBookingPassengers= this.passengerList;
+    BookingObj.totalSeats= this.passengerList.length;
+    this.trainService.bookTrain(BookingObj).subscribe((res: IAPIResponse) => {
+
+      if (res.result) {
+
+        alert("Ticket Booked Successfully..!")
+        this.closeBooking();
+
+      }
+      else {
+        alert(res.message)
+      }
+    })
+  }
+}
 
   // removePassenger(){
   //   this.passengerList.;
@@ -99,5 +142,4 @@ export class SearchComponent implements OnInit {
 
 
 
-}
 

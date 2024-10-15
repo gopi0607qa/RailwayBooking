@@ -29,4 +29,9 @@ export class TrainService {
     return this.http.post<IAPIResponse>(`${this.apiURL}Login`,obj)
 
    }
+
+   bookTrain(obj:any){
+    return this.http.post<IAPIResponse>(`${this.apiURL}BookTrain`,obj)
+
+   }
 }
